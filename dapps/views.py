@@ -64,6 +64,5 @@ def tokenPair(request):
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-@csrf_exempt
-def swap(request):
-    
+# @csrf_exempt
+# def swap(request):

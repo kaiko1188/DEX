@@ -47168,3 +47168,4 @@ File /usr/local/lib/python3.12/asyncio/taskgroups.py first seen with mtime 17156
 File /usr/local/lib/python3.12/site-packages/django/core/servers/__init__.py first seen with mtime 1721987298.1087863
 File /code/dapps/templates/base.html first seen with mtime 1728652170.617625
 File /code/dapps/templates/index.html first seen with mtime 1728652241.3138132
+(0.002) SELECT (1) AS "a" FROM "auth_user" WHERE "auth_user"."username" = 'admin' LIMIT 1; args=('admin',)
