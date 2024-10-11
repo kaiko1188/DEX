@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="place-center">
+    <button id="connectWalletButton" class="btn1" onclick="connectWallet()">Connect Wallet</button>
+    <h5>Connected Account: <span id="account">None</span></h5>
+        <h3>Connect Wallet and Check Token Balances</h3>
+        <div class="swap-space">
+            <h3>■SEND TOKEN</h3>
+            <div class="token-space">
+                <select id="send-token" class="token-select">
+                    <option>ETH</option>
+                    <option>USDC</option>
+                    <option>USDT</option>
+                </select>
+                <input id="amount" class="token-input" placeholder="0.000">
+            </div>
+            <h3 class="m0 mb10">ETH Max Balance:<swap id="ethBalance">0</swap></h3>
+            <h3>■RECV TOKEN</h3>
+            <div class="token-space">
+                <select id="recv-token" class="token-select">
+                    <option>ETH</option>
+                    <option>USDC</option>
+                    <option>USDT</option>
+                </select>
+                <h1 id="tokenValue" class="m0">0</h1>
+            </div>
+            <div>
+                <button id="swapButton" class="btn2" type="submit" onclick="signERC20SwapTransaction()">SWAP</button>
+            </div>
+        </div>
+</div>
+{% endblock %}
