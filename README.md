@@ -12,7 +12,7 @@
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/Kosuke-Mega/dapps-django-kit.git
+git clone https://github.com/Kosuke-Mega/DEX_MetaverseCollage.git
 cd dapps-django-kit
 ```
 
