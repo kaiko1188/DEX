@@ -13,7 +13,7 @@
 
 ```bash
 git clone https://github.com/Kosuke-Mega/DEX_MetaverseCollage.git
-cd dapps-django-kit
+cd DEX_MetaverseCollage
 ```
 
 ### 2. Dockerコンテナのビルドと起動
