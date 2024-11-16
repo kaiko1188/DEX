@@ -34,7 +34,7 @@ async function connectWallet() {
 }
 
 async function signERC20SwapTransaction() {
-    const contractAddress = "0x99e0bf54C37319dcAF99f56Ad44697C473C04780";
+    const contractAddress = "<コントラクトアドレス>";
     let contractABI = await getABIJson();
 
     if (!contractABI) {
