@@ -13,7 +13,7 @@
 
 ```bash
 git clone https://github.com/Kosuke-Mega/DEX_MetaverseCollage.git
-cd DEX_MetaverseCollage
+cd <クローンしたディレクトリ>
 ```
 
 ### 2. Dockerコンテナのビルドと起動
