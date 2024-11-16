@@ -56,7 +56,7 @@ def tokenPair(request):
 
                 # 結果を返す
                 return JsonResponse({
-                    'eth_usdc_price': round(price, 10)  # 小数点第2位までに丸める
+                    'eth_usdc_price': round(price, 4)  # 小数点第2位までに丸める
                 })
             else:
                 return JsonResponse({'error': 'Invalid token pair'}, status=400)
