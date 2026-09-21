@@ -86,7 +86,6 @@ def tokenPair(request):
 #dex = DEX()
 @csrf_exempt
 def swap(request):
-
     if request.method != 'POST':
         return JsonResponse(
             {'error': 'Invalid request method'},
@@ -94,19 +93,16 @@ def swap(request):
         )
 
     try:
-
-        # ==============================
-        # ① JSONを受け取る
-        # ==============================
-
+        # フロントからJSONを受け取る
         data = json.loads(request.body)
+
+        print("========== SWAP BACKEND DEBUG ==========")
+        print("data:", data)
 
         token_in = data.get('token_in')
         token_out = data.get('token_out')
         amount = data.get('amount')
 
-
-        print("========== DJANGO SWAP DEBUG ==========")
         print("token_in:", token_in)
         print("token_out:", token_out)
         print("amount:", amount)
@@ -144,15 +140,23 @@ def swap(request):
             'json',
             'contract_abi.json'
         )
+        with open(contract_path, 'r', encoding='utf-8') as f:
+                contract_abi = json.load(f)
 
 
         # ==============================
         # ④ DEXアドレス
         # ==============================
 
-        contract_address = os.environ.get(
-            'DEX_CONTRACT_ADDRESS'
-        )
+        contract_address = os.environ.get('DEX_CONTRACT_ADDRESS')
+
+        print("DEX_CONTRACT_ADDRESS:", contract_address)
+
+        if not contract_address:
+            return JsonResponse(
+                {'error': 'DEX_CONTRACT_ADDRESS is not set'},
+                status=500
+            )
 
         contract_address = Web3.to_checksum_address(
             contract_address
@@ -160,7 +164,25 @@ def swap(request):
 
 
         # ==============================
-        # ⑤ DEXコントラクト
+        # ⑤ ABI読み込み
+        # ==============================
+
+        contract_path = os.path.join(
+            settings.BASE_DIR,
+            'dapps',
+            'static',
+            'json',
+            'contract_abi.json'
+        )
+
+        print("ABI path:", contract_path)
+
+        with open(contract_path, 'r', encoding='utf-8') as f:
+            contract_abi = json.load(f)
+
+
+        # ==============================
+        # ⑥ DEXコントラクト
         # ==============================
 
         dex_contract = web3.eth.contract(
@@ -170,7 +192,7 @@ def swap(request):
 
 
         # ==============================
-        # ⑥ 送信者
+        # ⑦ 送信者
         # ==============================
 
         sender_address = os.environ.get(
@@ -181,42 +203,24 @@ def swap(request):
             'PRIVATE_KEY'
         )
 
+        print("SENDER_ADDRESS:", sender_address)
+        print("PRIVATE_KEY exists:", bool(private_key))
+
+        if not sender_address:
+            return JsonResponse(
+                {'error': 'SENDER_ADDRESS is not set'},
+                status=500
+            )
+
+        if not private_key:
+            return JsonResponse(
+                {'error': 'PRIVATE_KEY is not set'},
+                status=500
+            )
+
         sender_address = Web3.to_checksum_address(
             sender_address
         )
-
-
-        # ==============================
-        # ⑦ amount_in計算
-        # ==============================
-
-        if token_in in STABLECOINS:
-
-            # USDC / USDT = 6 decimals
-
-            amount_in = int(
-                float(amount) * 10**6
-            )
-
-        elif token_in == 'ETH':
-
-            # ETH = 18 decimals
-
-            amount_in = Web3.toWei(
-                float(amount),
-                'ether'
-            )
-
-        else:
-
-            return JsonResponse(
-                {
-                    'error':
-                    f'Unsupported token: {token_in}'
-                },
-                status=400
-            )
-
 
         # ==============================
         # ⑧ amount_out計算
