@@ -27,6 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+import os
+
+ALCHEMY_API_KEY = os.getenv("ALCHEMY_API_KEY")
+
+
+DEX_CONTRACT_ADDRESS = os.getenv("DEX_CONTRACT_ADDRESS")
 
 # Application definition
 

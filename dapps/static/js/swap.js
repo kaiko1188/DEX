@@ -1,40 +1,87 @@
+// ==============================
 // walletアカウント
+// ==============================
 let account;
 
-// web3インスタンスを作成
+// Web3インスタンス
 const web3 = new Web3(window.ethereum);
 
+
+// ==============================
+// MetaMask接続
+// ==============================
 async function connectWallet() {
     try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+        const accounts = await window.ethereum.request({
+            method: 'eth_requestAccounts'
+        });
+
         account = accounts[0];
-        console.log(account);
+
+        console.log("Connected account:", account);
+
         document.getElementById('account').textContent = account;
 
+
         const balance = await getEthBalance(account);
-        console.log(balance);
+
+        console.log("ETH balance:", balance);
+
         document.getElementById('ethBalance').textContent = balance;
 
-        // アカウント変更時のイベントリスナー
+
+        // アカウント変更時
         window.ethereum.on('accountsChanged', async (accounts) => {
+
+            if (accounts.length === 0) {
+                account = null;
+                return;
+            }
+
             account = accounts[0];
+
             document.getElementById('account').textContent = account;
+
             const balance = await getEthBalance(account);
+
             document.getElementById('ethBalance').textContent = balance;
         });
 
-        // ネットワーク変更時のイベントリスナー
+
+        // ネットワーク変更時
         window.ethereum.on('chainChanged', async () => {
+
+            if (!account) {
+                return;
+            }
+
             const balance = await getEthBalance(account);
+
             document.getElementById('ethBalance').textContent = balance;
         });
+
     } catch (error) {
-        console.error('Error connecting wallet:', error);
+
+        console.error(
+            'Error connecting wallet:',
+            error
+        );
+
     }
 }
 
+
+// ==============================
+// Swap
+// ==============================
 async function signERC20SwapTransaction() {
-    const contractAddress = "<コントラクトアドレス>";
+
+    const contractAddress =
+        "0xB13322a9fECfF7F247BE0410eFC370B0Ca9251FD";
+
+
+    // ABI取得
     let contractABI = await getABIJson();
 
     if (!contractABI) {
@@ -42,113 +89,381 @@ async function signERC20SwapTransaction() {
         return;
     }
 
+
     if (typeof contractABI === 'string') {
         contractABI = JSON.parse(contractABI);
     }
 
-    const contract = new web3.eth.Contract(contractABI, contractAddress);
 
-    // スワップに必要な情報を取得
-    const tokenIn = document.getElementById('send-token').value;
-    const tokenOut = document.getElementById('recv-token').value;
-    let amountIn = document.getElementById('amount').value;
-    let amountOut = document.getElementById('tokenValue').textContent;
+    // コントラクト
+    const contract = new web3.eth.Contract(
+        contractABI,
+        contractAddress
+    );
 
-    // if (!web3.utils.isAddress(tokenIn) || !web3.utils.isAddress(tokenOut)) {
-    //     console.error("Invalid token addresses provided.");
-    //     return;
-    // }
 
-    if (isNaN(amountIn) || isNaN(amountOut)) {
-        console.error("Invalid input values for amountIn or amountOut.");
+    // ==============================
+    // 入力値取得
+    // ==============================
+
+    const tokenIn =
+        document.getElementById('send-token').value;
+
+    const tokenOut =
+        document.getElementById('recv-token').value;
+
+    const amountIn =
+        document.getElementById('amount').value;
+
+    const amountOut =
+        document.getElementById('tokenValue').textContent;
+
+
+    console.log("========== SWAP DEBUG ==========");
+    console.log("tokenIn:", tokenIn);
+    console.log("tokenOut:", tokenOut);
+    console.log("amountIn:", amountIn);
+    console.log("amountOut:", amountOut);
+    console.log("account:", account);
+    console.log("=================================");
+
+
+    // ==============================
+    // 入力チェック
+    // ==============================
+
+    if (!account) {
+        console.error("MetaMaskが接続されていません。");
         return;
     }
 
+
+    if (tokenIn === tokenOut) {
+        console.error("同じトークン同士は交換できません。");
+        return;
+    }
+
+
+    if (
+        amountIn === "" ||
+        amountOut === "" ||
+        isNaN(amountIn) ||
+        isNaN(amountOut)
+    ) {
+        console.error(
+            "Invalid input values for amountIn or amountOut."
+        );
+        return;
+    }
+
+
     try {
-        weiMultiplier = 10 ** 9; // 1 ETH = 10^18 Wei
-        amountIn = (parseFloat(amountIn) * weiMultiplier); // 小数点を削除して文字列化
-        console.log("Amount In (Wei, Integer):", amountIn);
-        amountOut = (parseFloat(amountOut) * weiMultiplier); // 小数点を削除して文字列化
-        console.log("Amount Out (Wei, Integer):", amountOut);
+
+        // ==============================
+        // amountInを最小単位へ変換
+        // ==============================
+
+        let amountInSmallest;
+
+        if (tokenIn === "ETH") {
+
+            // ETH = 18 decimals
+
+            amountInSmallest = web3.utils.toWei(
+                amountIn.toString(),
+                'ether'
+            );
+
+        } else {
+
+            // USDC / USDT = 6 decimals
+
+            amountInSmallest = Math.round(
+                parseFloat(amountIn) * 10 ** 6
+            ).toString();
+
+        }
+
+
+        // ==============================
+        // amountOutを最小単位へ変換
+        // ==============================
+
+        let amountOutSmallest;
+
+        if (tokenOut === "ETH") {
+
+            // ETH = 18 decimals
+
+            amountOutSmallest = web3.utils.toWei(
+                amountOut.toString(),
+                'ether'
+            );
+
+        } else {
+
+            // USDC / USDT = 6 decimals
+
+            amountOutSmallest = Math.round(
+                parseFloat(amountOut) * 10 ** 6
+            ).toString();
+
+        }
+
+
+        console.log(
+            "amountInSmallest:",
+            amountInSmallest
+        );
+
+        console.log(
+            "amountOutSmallest:",
+            amountOutSmallest
+        );
+
+
+        // ==============================
+        // Gas見積もり
+        // ==============================
 
         const gas = await contract.methods
-            .erc20Swap(tokenIn, amountIn, tokenOut, amountOut)
-            .estimateGas({ from: account });
+            .erc20Swap(
+                tokenIn,
+                amountInSmallest,
+                tokenOut,
+                amountOutSmallest
+            )
+            .estimateGas({
+                from: account
+            });
 
-        const gasPrice = await web3.eth.getGasPrice();
+
+        console.log("Estimated gas:", gas);
+
+
+        // ==============================
+        // Gas Price
+        // ==============================
+
+        const gasPrice =
+            await web3.eth.getGasPrice();
+
+
+        // ==============================
+        // Djangoへ送るデータ
+        // ==============================
 
         const txData = {
+
+            // MetaMaskアカウント
             from: account,
+
+            // DEXコントラクト
             to: contractAddress,
-            gas,
-            gasPrice,
-            data: await contract.methods.erc20Swap(tokenIn, amountIn, tokenOut, amountOut).encodeABI(),
+
+            gas: gas,
+
+            gasPrice: gasPrice,
+
+            // Solidityの関数を呼ぶためのdata
+            data: await contract.methods
+                .erc20Swap(
+                    tokenIn,
+                    amountInSmallest,
+                    tokenOut,
+                    amountOutSmallest
+                )
+                .encodeABI(),
+
+            // Django側で使用
+            token_in: tokenIn,
+            token_out: tokenOut,
+            amount: amountIn
         };
 
+
+        console.log("========== TX DATA ==========");
         console.log(txData);
-        sendAPITransaction(txData);
+        console.log("=============================");
+
+
+        // Djangoへ送信
+        await sendAPITransaction(txData);
+
+
     } catch (error) {
-        console.error('Error signing transaction:', error);
+
+        console.error(
+            "Error creating transaction:",
+            error
+        );
+
     }
 }
 
+
+// ==============================
+// Djangoへトランザクション送信
+// ==============================
 async function sendAPITransaction(tx) {
+
     try {
+
         const response = await fetch('/swap/', {
+
             method: 'POST',
+
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCsrfToken()
             },
+
             body: JSON.stringify(tx)
+
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         const result = await response.json();
-        console.log('Transaction Result:', result);
-    } catch (error) {
-        console.error('Error sending transaction:', error);
-    }
-}
 
-async function getABIJson() {
-    try {
-        if (!window.abiJsonUrl) {
-            throw new Error("ABI JSON URL is not defined.");
-        }
 
-        const response = await fetch(window.abiJsonUrl);
+        console.log(
+            "Transaction Result:",
+            result
+        );
+
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch ABI JSON: ${response.status}`);
+
+            throw new Error(
+                result.message ||
+                result.error ||
+                `HTTP error! status: ${response.status}`
+            );
+
         }
 
+
+    } catch (error) {
+
+        console.error(
+            "Error sending transaction:",
+            error
+        );
+
+    }
+}
+
+
+// ==============================
+// ABI取得
+// ==============================
+async function getABIJson() {
+
+    try {
+
+        if (!window.abiJsonUrl) {
+
+            throw new Error(
+                "ABI JSON URL is not defined."
+            );
+
+        }
+
+
+        const response =
+            await fetch(window.abiJsonUrl);
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Failed to fetch ABI JSON: ${response.status}`
+            );
+
+        }
+
+
         return await response.json();
+
+
     } catch (error) {
-        console.error('Error fetching ABI JSON:', error);
+
+        console.error(
+            "Error fetching ABI JSON:",
+            error
+        );
+
     }
 }
 
+
+// ==============================
+// ETH残高取得
+// ==============================
 async function getEthBalance(account) {
+
     try {
-        const balance = await web3.eth.getBalance(account);
-        return web3.utils.fromWei(balance, 'ether');
+
+        const balance =
+            await web3.eth.getBalance(account);
+
+
+        return web3.utils.fromWei(
+            balance,
+            'ether'
+        );
+
+
     } catch (error) {
-        console.error('Error fetching ETH balance:', error);
+
+        console.error(
+            "Error fetching ETH balance:",
+            error
+        );
+
         return '0';
+
     }
 }
 
-async function getTokenBalance(account, tokenAddress) {
+
+// ==============================
+// ERC20残高取得
+// ==============================
+async function getTokenBalance(
+    account,
+    tokenAddress
+) {
+
     try {
-        const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
-        const balance = await tokenContract.methods.balanceOf(account).call();
-        return web3.utils.fromWei(balance, 'mwei'); // USDC/USDTは6桁の小数を使用
+
+        const tokenContract =
+            new web3.eth.Contract(
+                erc20Abi,
+                tokenAddress
+            );
+
+
+        const balance =
+            await tokenContract.methods
+                .balanceOf(account)
+                .call();
+
+
+        return web3.utils.fromWei(
+            balance,
+            'mwei'
+        );
+
+
     } catch (error) {
-        console.error('Error fetching token balance:', error);
+
+        console.error(
+            "Error fetching token balance:",
+            error
+        );
+
         return '0';
+
     }
 }
