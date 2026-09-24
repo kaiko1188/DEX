@@ -222,10 +222,39 @@ def swap(request):
             sender_address
         )
 
-        # ==============================
-        # ⑧ amount_out計算
-        # ==============================
+ 
 
+
+        #=============================
+        # ⑧ amount_in計算
+        #=============================
+                # ERC20はUSDC/USDTともに6桁
+        if token_in in STABLECOINS:
+
+            amount_in = int(
+                float(amount) * 10**6
+            )
+
+        elif token_in == 'ETH':
+
+            amount_in = Web3.toWei(
+                float(amount),
+                'ether'
+            )
+
+        else:
+
+            return JsonResponse(
+                {
+                    'error':
+                    f'Unsupported token pair: '
+                    f'{token_in}/{token_out}'
+                },
+                status=400
+            )
+
+
+        # amount_out計算
         if (
             token_in in STABLECOINS
             and token_out in STABLECOINS

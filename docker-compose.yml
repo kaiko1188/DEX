@@ -20,6 +20,9 @@ services:
       - "8000:8000"
     depends_on:
       - db
+    env_file:
+      - ./dapps/.env
+
     environment:
       - DJANGO_DB_HOST=db
       - DJANGO_DB_PORT=3306
