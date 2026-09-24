@@ -11,9 +11,8 @@ import os
 # ===== 設定 =====
 # 本番では環境変数から読み込む（例: export CMC_API_KEY=xxx）
 API_KEY      = os.environ.get('CMC_API_KEY', '3eb8e3be-cd3b-44bb-8612-07468b905d8a')
-ALCHEMY_KEY  = os.environ.get('ALCHEMY_API_KEY', 'IDS-YGcEPGAZC4J0lmjq_i2W31hTIGLm')
+#ALCHEMY_KEY  = os.environ.get('ALCHEMY_API_KEY', 'IDS-YGcEPGAZC4J0lmjq_i2W31hTIGLm')
 
-# Alchemy APIキー
 ALCHEMY_API_KEY = settings.ALCHEMY_API_KEY
 # Alchemy URL
 ALCHEMY_URL = f"https://eth-sepolia.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
