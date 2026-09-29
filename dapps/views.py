@@ -363,7 +363,7 @@ def swap(request):
         # ==============================
 
         tx_hash = web3.eth.send_raw_transaction(
-            signed_tx.rawTransaction
+            signed_tx.raw_transaction
         )
 
 
@@ -374,17 +374,19 @@ def swap(request):
         receipt = web3.eth.wait_for_transaction_receipt(
             tx_hash
         )
-
-
+        print("TRANSACTION STATUS:", receipt.status)
+        print("TRANSACTION RECEIPT:", receipt)
+        #辞書｛｝キー：値
         return JsonResponse({
 
             "status": "success",
 
-            "tx_hash": tx_hash.hex(),
+            "tx_hash": tx_hash.hex()
 
-            "receipt": dict(receipt)
-
-        })
+           #"receipt": dict(receipt)
+           #blockchainに送ったトランザクションが最終的にどうなったかを確認するための情報が含まれる
+           #必要であればフロント側でsepolia.etherscan.ioなどで確認できるからリンク作ればよい
+         })
 
 
     except json.JSONDecodeError:
