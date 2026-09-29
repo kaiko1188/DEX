@@ -221,8 +221,70 @@ def swap(request):
             sender_address
         )
 
- 
+        USDC_ADDRESS = os.environ.get('USDC_CONTRACT_ADDRESS')
+        USDT_ADDRESS = os.environ.get('USDT_CONTRACT_ADDRESS')
 
+        erc20_abi_path = os.path.join(
+            settings.BASE_DIR,
+            'dapps',
+            'static',
+            'json',
+            'ERC20_abi.json'
+        )
+
+        with open(erc20_abi_path, 'r', encoding='utf-8') as f:
+            erc20_abi = json.load(f)
+
+        usdc_contract = web3.eth.contract(
+            address=USDC_ADDRESS,
+            abi=erc20_abi
+        )
+
+        usdt_contract = web3.eth.contract(
+            address=USDT_ADDRESS,
+            abi=erc20_abi
+        )
+
+        usdc_balance = usdc_contract.functions.balanceOf(
+            sender_address
+        ).call()
+
+        usdc_allowance = usdc_contract.functions.allowance(
+            sender_address,
+            contract_address
+        ).call()
+
+        usdt_balance = usdt_contract.functions.balanceOf(
+            contract_address
+        ).call()
+
+        print("========== TOKEN DEBUG ==========")
+
+        print(
+            "USDC balance:",
+            usdc_balance,
+            "(",
+            usdc_balance / 10**6,
+            "USDC)"
+        )
+
+        print(
+            "USDC allowance:",
+            usdc_allowance,
+            "(",
+            usdc_allowance / 10**6,
+            "USDC)"
+        )
+
+        print(
+            "DEX USDT balance:",
+            usdt_balance,
+            "(",
+            usdt_balance / 10**6,
+            "USDT)"
+        )
+
+        print("=================================")
 
         #=============================
         # ⑧ amount_in計算
@@ -319,7 +381,8 @@ def swap(request):
         # ==============================
 
         nonce = web3.eth.get_transaction_count(
-            sender_address
+            sender_address,
+            'pending'
         )
 
 

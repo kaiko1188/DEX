@@ -78,7 +78,7 @@ async function connectWallet() {
 async function signERC20SwapTransaction() {
 
     const contractAddress =
-        "0xB13322a9fECfF7F247BE0410eFC370B0Ca9251FD";
+        "0x65D4bBb74F7DaC2f506054A1CB4CbF5837D1FE77";   // DEXコントラクトアドレス
 
 
     // ABI取得
