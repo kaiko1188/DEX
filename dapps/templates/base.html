@@ -11,8 +11,15 @@
     <script src="{% static 'js/token_price.js' %}" defer></script>
     <script src="{% static 'js/swap.js' %}" defer></script>
     <script>
-        // 静的ファイルのURLをJavaScriptのグローバル変数に設定
+        // DEXコントラクトのABI
         window.abiJsonUrl = "{% static 'json/contract_abi.json' %}";
+
+        // ERC20トークンのABI
+        window.erc20AbiUrl = "{% static 'json/ERC20_abi.json' %}";
+
+        // USDC・USDTのコントラクトアドレス
+        window.USDC_CONTRACT_ADDRESS = "{{ USDC_CONTRACT_ADDRESS|default:'' }}";
+        window.USDT_CONTRACT_ADDRESS = "{{ USDT_CONTRACT_ADDRESS|default:'' }}";
     </script>
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
 </head>

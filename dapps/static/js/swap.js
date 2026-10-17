@@ -220,40 +220,106 @@ async function signERC20SwapTransaction() {
             "amountOutSmallest:",
             amountOutSmallest
         );
+        // ==============================
+        // ERC20 Approve
+        // ==============================
+
+        // ETHはERC20ではないのでApprove不要
+        if (tokenIn !== "ETH") {
+
+            // ERC20のABIを取得
+            const erc20ABI = await getERC20ABIJson();
+
+            // トークンアドレスを取得
+            let tokenAddress;
+
+            if (tokenIn === "USDC") {
+                tokenAddress = window.USDC_CONTRACT_ADDRESS;
+            } else if (tokenIn === "USDT") {
+                tokenAddress = window.USDT_CONTRACT_ADDRESS;
+            } else {
+                throw new Error("未対応のトークンです。");
+            }
+
+            // アドレス確認
+            if (!web3.utils.isAddress(tokenAddress)) {
+                throw new Error(
+                    `${tokenIn}のコントラクトアドレスが不正です。`
+                );
+            }
+
+
+            const tokenContract = new web3.eth.Contract(
+                erc20ABI,
+                tokenAddress
+            );
+
+            // 必要な数量だけApprove
+            const approvalReceipt = await tokenContract.methods
+                .approve(
+                    contractAddress,
+                    amountInSmallest
+                )
+                .send({
+                    from: account
+                });
+
+            console.log(
+                "Approve completed:",
+                approvalReceipt.transactionHash
+            );
+
+            if (
+                approvalReceipt.status === false ||
+                approvalReceipt.status === "0x0"
+            ) {
+                throw new Error("Approveに失敗しました。");
+            }
+        }
+
+
+        
 
 
         // ==============================
-        // Gas見積もり
+        // MetaMaskからSwapを実行
         // ==============================
 
-        const gas = await contract.methods
+        const swapReceipt = await contract.methods
             .erc20Swap(
                 tokenIn,
                 amountInSmallest,
                 tokenOut,
                 amountOutSmallest
             )
-            .estimateGas({
+            .send({
                 from: account
             });
 
+        console.log(
+            "Swap transaction:",
+            swapReceipt.transactionHash
+        );
 
-        console.log("Estimated gas:", gas);
+        if (
+            swapReceipt.status === false ||
+            swapReceipt.status === "0x0"
+        ) {
+            throw new Error("Swapに失敗しました。");
+        }
 
-
-        // ==============================
-        // Gas Price
-        // ==============================
-
-        const gasPrice =
-            await web3.eth.getGasPrice();
+        alert(
+            "スワップが完了しました。\n" +
+            "Transaction Hash: " +
+            swapReceipt.transactionHash
+        );
 
 
         // ==============================
         // Djangoへ送るデータ
         // ==============================
 
-        const txData = {
+        /*const txData = {
 
             // MetaMaskアカウント
             from: account,
@@ -289,7 +355,7 @@ async function signERC20SwapTransaction() {
 
         // Djangoへ送信
         await sendAPITransaction(txData);
-
+        /*
 
     } catch (error) {
 
@@ -393,6 +459,32 @@ async function getABIJson() {
             error
         );
 
+    }
+}
+// ==============================
+// ERC20 ABI取得
+// ==============================
+async function getERC20ABIJson() {
+    try {
+        const response = await fetch(
+            '/static/json/ERC20_abi.json'
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Failed to fetch ERC20 ABI: ${response.status}`
+            );
+        }
+
+        return await response.json();
+
+    } catch (error) {
+        console.error(
+            "Error fetching ERC20 ABI:",
+            error
+        );
+
+        throw error;
     }
 }
 
