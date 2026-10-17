@@ -315,47 +315,7 @@ async function signERC20SwapTransaction() {
         );
 
 
-        // ==============================
-        // Djangoへ送るデータ
-        // ==============================
 
-        /*const txData = {
-
-            // MetaMaskアカウント
-            from: account,
-
-            // DEXコントラクト
-            to: contractAddress,
-
-            gas: gas,
-
-            gasPrice: gasPrice,
-
-            // Solidityの関数を呼ぶためのdata
-            data: await contract.methods
-                .erc20Swap(
-                    tokenIn,
-                    amountInSmallest,
-                    tokenOut,
-                    amountOutSmallest
-                )
-                .encodeABI(),
-
-            // Django側で使用
-            token_in: tokenIn,
-            token_out: tokenOut,
-            amount: amountIn
-        };
-
-
-        console.log("========== TX DATA ==========");
-        console.log(txData);
-        console.log("=============================");
-
-
-        // Djangoへ送信
-        await sendAPITransaction(txData);
-        /*
 
     } catch (error) {
 
@@ -367,57 +327,6 @@ async function signERC20SwapTransaction() {
     }
 }
 
-
-// ==============================
-// Djangoへトランザクション送信
-// ==============================
-async function sendAPITransaction(tx) {
-
-    try {
-
-        const response = await fetch('/swap/', {
-
-            method: 'POST',
-
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-
-            body: JSON.stringify(tx)
-
-        });
-
-
-        const result = await response.json();
-
-
-        console.log(
-            "Transaction Result:",
-            result
-        );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                result.message ||
-                result.error ||
-                `HTTP error! status: ${response.status}`
-            );
-
-        }
-
-
-    } catch (error) {
-
-        console.error(
-            "Error sending transaction:",
-            error
-        );
-
-    }
-}
 
 
 // ==============================
@@ -466,9 +375,11 @@ async function getABIJson() {
 // ==============================
 async function getERC20ABIJson() {
     try {
-        const response = await fetch(
-            '/static/json/ERC20_abi.json'
-        );
+        if (!window.erc20AbiUrl) {
+            throw new Error("ERC20 ABI URL is not defined.");
+        }
+
+        const response = await fetch(window.erc20AbiUrl);
 
         if (!response.ok) {
             throw new Error(
@@ -479,11 +390,7 @@ async function getERC20ABIJson() {
         return await response.json();
 
     } catch (error) {
-        console.error(
-            "Error fetching ERC20 ABI:",
-            error
-        );
-
+        console.error("Error fetching ERC20 ABI:", error);
         throw error;
     }
 }
@@ -529,11 +436,12 @@ async function getTokenBalance(
 
     try {
 
-        const tokenContract =
-            new web3.eth.Contract(
-                erc20Abi,
-                tokenAddress
-            );
+        const erc20ABI = await getERC20ABIJson();
+
+        const tokenContract = new web3.eth.Contract(
+            erc20ABI,
+            tokenAddress
+        );
 
 
         const balance =

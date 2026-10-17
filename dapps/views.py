@@ -37,7 +37,13 @@ def get_eth_usd_price():
 
 def index(request):
     """ホームページ"""
-    return render(request, 'index.html')
+
+    context = {
+        'USDC_CONTRACT_ADDRESS': os.environ.get('USDC_CONTRACT_ADDRESS', ''),
+        'USDT_CONTRACT_ADDRESS': os.environ.get('USDT_CONTRACT_ADDRESS', ''),
+    }
+
+    return render(request, 'index.html', context)
 
 
 @csrf_exempt
