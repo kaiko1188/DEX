@@ -5,11 +5,20 @@ let account;
 
 // Web3インスタンス
 const web3 = new Web3(window.ethereum);
-const chainId = await window.ethereum.request({
-    method: 'eth_chainId'
-});
+async function checkNetwork() {
+    try {
+        const chainId = await window.ethereum.request({
+            method: 'eth_chainId'
+        });
 
-console.log("Network Chain ID:", chainId);
+        console.log("Network Chain ID:", chainId);
+
+    } catch (error) {
+        console.error("ネットワーク取得エラー:", error);
+    }
+}
+
+checkNetwork();
 
 
 // ==============================
@@ -17,62 +26,132 @@ console.log("Network Chain ID:", chainId);
 // ==============================
 async function connectWallet() {
     try {
-
+        // MetaMaskに接続してアカウントを取得
         const accounts = await window.ethereum.request({
             method: 'eth_requestAccounts'
         });
+
+        if (accounts.length === 0) {
+            return;
+        }
 
         account = accounts[0];
 
         console.log("Connected account:", account);
 
+        // 接続中のアカウントを画面に表示
         document.getElementById('account').textContent = account;
 
-
-        const balance = await getEthBalance(account);
-
-        console.log("ETH balance:", balance);
-
-        document.getElementById('ethBalance').textContent = balance;
+        // ETH・USDC・USDTの残高をまとめて更新
+        await updateBalances();
 
 
         // アカウント変更時
-        window.ethereum.on('accountsChanged', async (accounts) => {
+        // すでに登録済みのイベントを重複登録しないようにする
+        if (!window.accountChangedListener) {
+            window.accountChangedListener = async (accounts) => {
+                if (accounts.length === 0) {
+                    account = null;
 
-            if (accounts.length === 0) {
-                account = null;
-                return;
-            }
+                    document.getElementById('account').textContent = '未接続';
+                    document.getElementById('ethBalance').textContent = '-';
+                    document.getElementById('usdcBalance').textContent = '-';
+                    document.getElementById('usdtBalance').textContent = '-';
 
-            account = accounts[0];
+                    return;
+                }
 
-            document.getElementById('account').textContent = account;
+                account = accounts[0];
 
-            const balance = await getEthBalance(account);
+                console.log("Account changed:", account);
 
-            document.getElementById('ethBalance').textContent = balance;
-        });
+                document.getElementById('account').textContent = account;
+
+                await updateBalances();
+            };
+
+            window.ethereum.on(
+                'accountsChanged',
+                window.accountChangedListener
+            );
+        }
 
 
         // ネットワーク変更時
-        window.ethereum.on('chainChanged', async () => {
+        if (!window.chainChangedListener) {
+            window.chainChangedListener = async () => {
+                console.log("Network changed:", window.ethereum.chainId);
 
-            if (!account) {
-                return;
-            }
+                if (!account) {
+                    return;
+                }
 
-            const balance = await getEthBalance(account);
+                await updateBalances();
+            };
 
-            document.getElementById('ethBalance').textContent = balance;
-        });
+            window.ethereum.on(
+                'chainChanged',
+                window.chainChangedListener
+            );
+        }
 
     } catch (error) {
+        console.error('Error connecting wallet:', error);
+    }
+}
+async function updateBalances() {
+    if (!account) {
+        return;
+    }
 
-        console.error(
-            'Error connecting wallet:',
-            error
-        );
+    try {
+        // ETH残高を取得
+        const ethBalance = await getEthBalance(account);
 
+        document.getElementById('ethBalance').textContent = ethBalance;
+
+        console.log("ETH Balance:", ethBalance);
+
+
+        // USDC残高を取得
+        const usdcAddress = window.USDC_CONTRACT_ADDRESS;
+
+        if (web3.utils.isAddress(usdcAddress)) {
+            const usdcBalance = await getTokenBalance(
+                account,
+                usdcAddress
+            );
+
+            document.getElementById('usdcBalance').textContent = usdcBalance;
+
+            console.log("USDC Balance:", usdcBalance);
+        } else {
+            console.error("USDCのコントラクトアドレスが不正です:", usdcAddress);
+
+            document.getElementById('usdcBalance').textContent = '取得失敗';
+        }
+
+
+        // USDT残高を取得
+        const usdtAddress = window.USDT_CONTRACT_ADDRESS;
+
+        if (web3.utils.isAddress(usdtAddress)) {
+            const usdtBalance = await getTokenBalance(
+                account,
+                usdtAddress
+            );
+
+            document.getElementById('usdtBalance').textContent = usdtBalance;
+
+            console.log("USDT Balance:", usdtBalance);
+        } else {
+            console.error("USDTのコントラクトアドレスが不正です:", usdtAddress);
+
+            document.getElementById('usdtBalance').textContent = '取得失敗';
+        }
+
+    } catch (error) {
+        console.error("残高更新エラー:", error);
     }
 }
 
@@ -434,7 +513,7 @@ async function getEthBalance(account) {
 // ==============================
 // ERC20残高取得
 // ==============================
-async function getTokenBalance(
+/*async function getTokenBalance(
     account,
     tokenAddress
 ) {
@@ -470,5 +549,35 @@ async function getTokenBalance(
 
         return '0';
 
+    }
+}
+*/
+async function getTokenBalance(account, tokenAddress) {
+    try {
+        console.log("残高取得開始");
+        console.log("Account:", account);
+        console.log("Token Address:", tokenAddress);
+
+        const erc20ABI = await getERC20ABIJson();
+
+        console.log("ERC20 ABI:", erc20ABI);
+
+        const tokenContract = new web3.eth.Contract(
+            erc20ABI,
+            tokenAddress
+        );
+
+        const balance = await tokenContract.methods
+            .balanceOf(account)
+            .call();
+
+        console.log("Raw Token Balance:", balance);
+
+        // USDC・USDTは6 decimalsを想定
+        return web3.utils.fromWei(balance, 'mwei');
+
+    } catch (error) {
+        console.error("トークン残高取得エラー:", error);
+        throw error;
     }
 }
