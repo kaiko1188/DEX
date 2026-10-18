@@ -5,6 +5,11 @@ let account;
 
 // Web3インスタンス
 const web3 = new Web3(window.ethereum);
+const chainId = await window.ethereum.request({
+    method: 'eth_chainId'
+});
+
+console.log("Network Chain ID:", chainId);
 
 
 // ==============================

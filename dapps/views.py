@@ -43,6 +43,10 @@ def index(request):
         'USDT_CONTRACT_ADDRESS': os.environ.get('USDT_CONTRACT_ADDRESS', ''),
     }
 
+    print("USDC ADDRESS:", repr(context['USDC_CONTRACT_ADDRESS']))
+    print("USDT ADDRESS:", repr(context['USDT_CONTRACT_ADDRESS']))
+
+
     return render(request, 'index.html', context)
 
 
