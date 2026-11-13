@@ -147568,3 +147568,4 @@ Internal Server Error: /tokenPair/
 "POST /tokenPair/ HTTP/1.1" 500 42
 Internal Server Error: /tokenPair/
 "POST /tokenPair/ HTTP/1.1" 500 42
+"POST /tokenPair/ HTTP/1.1" 200 23
