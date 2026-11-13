@@ -397,6 +397,8 @@ async function signERC20SwapTransaction() {
             "Transaction Hash: " +
             swapReceipt.transactionHash
         );
+        // 残高を再取得して画面を更新
+        await updateBalances();
 
 
 
